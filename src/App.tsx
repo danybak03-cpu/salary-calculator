@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { AllJurisdictions } from './components/AllJurisdictions'
 import { BonusCard } from './components/BonusCard'
+import { BonusComparison } from './components/BonusComparison'
 import { BreakdownCard } from './components/BreakdownCard'
 import { CompareTwo } from './components/CompareTwo'
 import { Footer } from './components/Footer'
@@ -120,6 +121,8 @@ export default function App() {
             divisor={divisor}
             periodLabel={periodLabel}
           />
+
+          <BonusComparison evals={evals} selected={s.jid} onSelect={(id) => set('jid', id)} conv={conv} display={s.display} />
         </main>
       </div>
 

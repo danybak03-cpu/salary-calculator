@@ -4,9 +4,11 @@ import { pct } from '../lib/format'
 import { Donut } from './Donut'
 import { Card, Segmented, Stat, Swatch } from './ui'
 
-export function BreakdownCard({ ev, fmt, periodLabel, showLocal, onShowLocal, displayCode }: {
+export function BreakdownCard({ ev, fmt, fmtMonth, periodLabel, showLocal, onShowLocal, displayCode }: {
   ev: Evaluation
   fmt: (x: number) => string
+  /** Always per month, whatever the Yearly/Monthly toggle says. */
+  fmtMonth: (x: number) => string
   periodLabel: string
   showLocal: boolean
   onShowLocal: (v: boolean) => void
@@ -77,6 +79,20 @@ export function BreakdownCard({ ev, fmt, periodLabel, showLocal, onShowLocal, di
           <div className="flex items-baseline justify-between py-1">
             <span className="text-sm font-semibold text-ink">Net pay</span>
             <span className="tnum text-xl font-semibold text-accent">{fmt(r.net)}</span>
+          </div>
+          <div className="mt-2 space-y-1 rounded-xl bg-surface-2 px-3 py-2 text-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-ink-2">Net per month</span>
+              <span className="tnum font-medium text-ink">{fmtMonth(r.net)}</span>
+            </div>
+            {ev.bonus.gross > 0 && (
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-ink-2">
+                  Net per month <span className="font-medium text-ink">incl. bonus</span>
+                </span>
+                <span className="tnum font-semibold text-good">{fmtMonth(ev.bonus.total.net)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

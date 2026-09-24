@@ -65,6 +65,11 @@ export function CompareTwo({ a, b, onA, onB, conv, display, periodLabel, divisor
           <div className="tnum text-xs text-ink-2">
             {divisor === 1 ? `${fm(values.net)} per month` : `${fy(values.net)} per year`}
           </div>
+          {e.bonus.gross > 0 && (
+            <div className="tnum text-xs text-ink-2">
+              <span className="font-medium text-good">{fm(conv(e, e.bonus.total.net))}</span> per month incl. bonus
+            </div>
+          )}
         </div>
         <CompositionBar values={values} fmt={f} />
       </div>

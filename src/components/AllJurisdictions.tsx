@@ -274,7 +274,7 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
       <p className="mt-1 text-right text-[11px] text-muted">Labels show net pay. Click a row to select it.</p>
 
       <div className="-mx-4 mt-4 overflow-x-auto sm:mx-0">
-        <table className="tnum w-full min-w-[900px] text-[13px]">
+        <table className="tnum w-full min-w-[900px] text-[13px] [&_td]:whitespace-nowrap">
           <thead className="border-b border-line text-ink-2">
             <tr>
               {header('label', 'Jurisdiction', 'left')}

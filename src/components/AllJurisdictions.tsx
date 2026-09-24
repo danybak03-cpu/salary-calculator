@@ -8,20 +8,25 @@ import { Card, Segmented, Swatch } from './ui'
 
 type Filter = 'all' | Region
 type Basis = 'salary' | 'bonus'
-type SortKey = 'label' | 'gross' | 'incomeTax' | 'social' | 'netYear' | 'netMonth' | 'effective' | 'marginal' | 'netBonus'
+type SortKey = 'label' | 'tGross' | 'tIncomeTax' | 'tSocial' | 'netYear' | 'netMonth' | 'netMonthBonus' | 'effective' | 'marginal' | 'netBonus'
 
 interface Row {
   id: string
   name: string
   flag: string
   region: Region
-  gross: number
+  /** Chart values: follow the Salary / + Bonus toggle and the period. */
   incomeTax: number
   social: number
   pension: number
   net: number
+  /** Table values: base salary only (gross/tax/social follow the period). */
+  tGross: number
+  tIncomeTax: number
+  tSocial: number
   netYear: number
   netMonth: number
+  netMonthBonus: number
   effective: number
   marginal: number
   netBonus: number
@@ -49,20 +54,23 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
         .filter((e) => filter === 'all' || e.j.region === filter)
         .map((e) => {
           const r = basis === 'bonus' ? e.bonus.total : e.base
-          const net = conv(e, r.net)
+          const baseNet = conv(e, e.base.net)
           return {
             id: e.j.id,
             name: e.j.short,
             flag: e.j.flag,
             region: e.j.region,
-            gross: conv(e, r.gross) / divisor,
             incomeTax: conv(e, r.incomeTax) / divisor,
             social: conv(e, r.social) / divisor,
             pension: conv(e, r.pension) / divisor,
-            net: net / divisor,
-            netYear: net,
-            netMonth: net / 12,
-            effective: r.effectiveRate,
+            net: conv(e, r.net) / divisor,
+            tGross: conv(e, e.base.gross) / divisor,
+            tIncomeTax: conv(e, e.base.incomeTax) / divisor,
+            tSocial: conv(e, e.base.social) / divisor,
+            netYear: baseNet,
+            netMonth: baseNet / 12,
+            netMonthBonus: conv(e, e.bonus.total.net) / 12,
+            effective: e.base.effectiveRate,
             marginal: e.marginal,
             netBonus: conv(e, e.bonus.net),
             caveat: e.j.caveat,
@@ -78,7 +86,9 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
     const vb = k === 'label' ? b.name : b[k]
     return (va < vb ? -1 : va > vb ? 1 : 0) * sort.dir
   })
-  const best = byNet[0]
+  const bySalary = [...rows].sort((a, b) => b.netYear - a.netYear)
+  const best = bySalary[0]
+  const worst = bySalary[bySalary.length - 1]
   const f = (x: number) => money(x, display)
   const hasPension = rows.some((r) => r.pension > 0.5)
   const series = SERIES.filter((s) => s.key !== 'pension' || hasPension)
@@ -121,8 +131,8 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
               value={basis}
               onChange={setBasis}
               options={[
-                { value: 'salary', label: 'Salary' },
-                { value: 'bonus', label: '+ Bonus' },
+                { value: 'salary', label: 'Chart: salary' },
+                { value: 'bonus', label: 'incl. bonus' },
               ]}
             />
           )}
@@ -133,10 +143,14 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
         <p className="mb-3 text-sm text-ink-2">
           Highest take-home: <strong className="text-ink">{best.flag} {best.name}</strong> at{' '}
           <strong className="tnum text-ink">{f(best.netMonth)}</strong> per month ({f(best.netYear)} a year)
-          {byNet.length > 1 && (
+          {hasBonus && (
             <>
-              , {f(best.netMonth - byNet[byNet.length - 1].netMonth)} a month more than {byNet[byNet.length - 1].flag}{' '}
-              {byNet[byNet.length - 1].name}
+              , <strong className="tnum text-ink">{f(best.netMonthBonus)}</strong> per month incl. bonus
+            </>
+          )}
+          {bySalary.length > 1 && (
+            <>
+              ; {f(best.netMonth - worst.netMonth)} a month more than {worst.flag} {worst.name}
             </>
           )}
           .
@@ -214,6 +228,12 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
                       <span>Net per month</span>
                       <span className="font-semibold text-ink">{f(r.netMonth)}</span>
                     </div>
+                    {hasBonus && (
+                      <div className="tnum flex justify-between text-ink-2">
+                        <span>Net per month incl. bonus</span>
+                        <span className="font-semibold text-ink">{f(r.netMonthBonus)}</span>
+                      </div>
+                    )}
                     <div className="tnum flex justify-between text-ink-2">
                       <span>Net per year</span>
                       <span className="text-ink">{f(r.netYear)}</span>
@@ -254,15 +274,16 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
       <p className="mt-1 text-right text-[11px] text-muted">Labels show net pay. Click a row to select it.</p>
 
       <div className="-mx-4 mt-4 overflow-x-auto sm:mx-0">
-        <table className="tnum w-full min-w-[800px] text-[13px]">
+        <table className="tnum w-full min-w-[900px] text-[13px]">
           <thead className="border-b border-line text-ink-2">
             <tr>
               {header('label', 'Jurisdiction', 'left')}
-              {header('gross', 'Gross')}
-              {header('incomeTax', 'Income tax')}
-              {header('social', 'Social')}
+              {header('tGross', 'Gross')}
+              {header('tIncomeTax', 'Income tax')}
+              {header('tSocial', 'Social')}
               {header('netYear', 'Net / year')}
               {header('netMonth', 'Net / month')}
+              {hasBonus && header('netMonthBonus', 'Net / month incl. bonus')}
               {header('effective', 'Effective')}
               {header('marginal', 'Marginal')}
               {hasBonus && header('netBonus', 'Net bonus / yr')}
@@ -283,11 +304,12 @@ export function AllJurisdictions({ evals, selected, onSelect, conv, display, div
                     </span>
                   )}
                 </td>
-                <td className="px-2 py-1.5 text-right text-ink-2">{f(r.gross)}</td>
-                <td className="px-2 py-1.5 text-right">{f(r.incomeTax)}</td>
-                <td className="px-2 py-1.5 text-right">{f(r.social)}</td>
+                <td className="px-2 py-1.5 text-right text-ink-2">{f(r.tGross)}</td>
+                <td className="px-2 py-1.5 text-right">{f(r.tIncomeTax)}</td>
+                <td className="px-2 py-1.5 text-right">{f(r.tSocial)}</td>
                 <td className="px-2 py-1.5 text-right font-semibold">{f(r.netYear)}</td>
                 <td className="px-2 py-1.5 text-right font-semibold">{f(r.netMonth)}</td>
+                {hasBonus && <td className="px-2 py-1.5 text-right font-semibold text-good">{f(r.netMonthBonus)}</td>}
                 <td className="px-2 py-1.5 text-right">{pct(r.effective)}</td>
                 <td className="px-2 py-1.5 text-right">{pct(r.marginal)}</td>
                 {hasBonus && <td className="px-2 py-1.5 text-right">{f(r.netBonus)}</td>}

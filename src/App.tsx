@@ -86,6 +86,7 @@ export default function App() {
             <BreakdownCard
               ev={main}
               fmt={fmtMain}
+              fmtMonth={(x) => money(mainAmount(x) / 12, mainCur)}
               periodLabel={periodLabel}
               showLocal={showLocal}
               onShowLocal={setShowLocal}
